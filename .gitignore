@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Node.js dependencies
+node_modules/
+
+# Frontend build output (generated)
+static/react/
+
+# Runtime/data files
+history.json
+output/
+global_config.json
+
+# Editor/OS
+.DS_Store
+.idea/
+
