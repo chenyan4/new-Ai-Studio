@@ -170,6 +170,401 @@ export function pollAngleCloud({ taskId, apiKey, clientId }) {
   });
 }
 
+export function generateVeoSeedanceVideo({
+  prompt,
+  apiKey,
+  modelSelect,
+  aspectRatio,
+  resolution,
+  duration,
+}) {
+  return request("/api/video/veo_seedance", {
+    method: "POST",
+    body: JSON.stringify({
+      prompt: prompt?.trim() || "",
+      api_key: apiKey || "",
+      model_select: modelSelect || "veo3.1-fast",
+      aspect_ratio: aspectRatio || "16:9",
+      resolution: resolution || "480p",
+      duration: duration ?? 5,
+    }),
+  });
+}
+
+/**
+ * 图生视频 Cloud：前端传图片文件，后端转为 base64 后调算法 /veo_seedance_api。
+ * 成功时返回 { url, success: true }，url 为可访问的视频地址（本地 /output/xxx 或远程）。
+ */
+export async function generateVeoSeedanceI2VVideo({
+  imageFile,
+  prompt,
+  apiKey,
+  modelSelect,
+  aspectRatio,
+  resolution,
+  duration,
+}) {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+  formData.append("prompt", prompt?.trim() || "");
+  formData.append("api_key", apiKey || "");
+  formData.append("model_select", modelSelect || "veo3.1-fast");
+  formData.append("aspect_ratio", aspectRatio || "16:9");
+  formData.append("resolution", resolution || "480p");
+  formData.append("duration", String(duration ?? 5));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/veo_seedance_i2v", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "图生视频失败");
+  }
+  // 保证返回 { url, success } 形状，便于调用方使用
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: typeof data === "object" && data?.url ? data.url : null, success: !!data?.url };
+}
+
+/**
+ * 首尾帧生成 Cloud：双图 + 提示词，调 /veo_seedance_api（双图 I2V），保存 type first_end。
+ */
+export async function generateVeoSeedanceFirstEndVideo({
+  image1File,
+  image2File,
+  prompt,
+  apiKey,
+  modelSelect,
+  aspectRatio,
+  resolution,
+  duration,
+}) {
+  const formData = new FormData();
+  formData.append("image_1", image1File);
+  formData.append("image_2", image2File);
+  formData.append("prompt", prompt?.trim() || "");
+  formData.append("api_key", apiKey || "");
+  formData.append("model_select", modelSelect || "veo3.1-fast");
+  formData.append("aspect_ratio", aspectRatio || "16:9");
+  formData.append("resolution", resolution || "480p");
+  formData.append("duration", String(duration ?? 5));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/veo_seedance_first_end", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "首尾帧生成失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
+/**
+ * 图生视频 Local（Wan2.2 Vace I2V）：前端传图片文件，后端转 base64 调算法 /wan_vace_i2v，返回 base64 视频后存本地。
+ */
+export async function generateWanVaceI2VVideo({ imageFile, prompt, numFrames, fps }) {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+  formData.append("prompt", prompt?.trim() || "");
+  formData.append("num_frames", String(numFrames ?? 81));
+  formData.append("fps", String(fps ?? 24));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/wan_vace_i2v", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "图生视频失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
+/**
+ * 首尾帧生成（Local）：首帧图 + 尾帧图 + 提示词 -> WanVideo 首尾帧视频。
+ */
+export async function generateWanVaceFirstEndVideo({
+  image1File,
+  image2File,
+  prompt,
+  numFrames,
+  width,
+  height,
+  fps,
+}) {
+  const formData = new FormData();
+  formData.append("image_1", image1File);
+  formData.append("image_2", image2File);
+  formData.append("prompt", prompt?.trim() || "");
+  formData.append("num_frames", String(numFrames ?? 81));
+  formData.append("width", String(Number(width) || 780));
+  formData.append("height", String(Number(height) || 420));
+  formData.append("fps", String(Number(fps) ?? 24));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/wan_vace_first_end", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "首尾帧生成失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
+export function generateWanVaceT2VVideo({ prompt, width, height, numFrames, fps }) {
+  return request("/api/video/wan_vace_t2v", {
+    method: "POST",
+    body: JSON.stringify({
+      prompt: prompt?.trim() || "",
+      width: Number(width) || 1024,
+      height: Number(height) || 576,
+      num_frames: Number(numFrames) || 81,
+      fps: Number(fps) || 24,
+    }),
+  });
+}
+
+/**
+ * 视频扩图（Local）：上传视频 + 四边扩展像素 + 尺寸、帧率 -> 算法 /video_expand。
+ */
+export async function generateVideoExpand({
+  videoFile,
+  expandLeft,
+  expandTop,
+  expandRight,
+  expandBottom,
+  width,
+  height,
+  fps,
+}) {
+  const formData = new FormData();
+  formData.append("video", videoFile);
+  formData.append("expand_left", String(Number(expandLeft) || 0));
+  formData.append("expand_top", String(Number(expandTop) || 0));
+  formData.append("expand_right", String(Number(expandRight) || 0));
+  formData.append("expand_bottom", String(Number(expandBottom) || 0));
+  formData.append("width", String(Number(width) || 480));
+  formData.append("height", String(Number(height) || 832));
+  formData.append("fps", String(Number(fps) ?? 24));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/video_expand", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "视频扩图失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
+/**
+ * 视频替换（单人）：视频 + 视频任意帧图 + 参考图 -> 算法 /wan_vace_person_change_one。
+ */
+export async function generateWanVacePersonChangeOneVideo({
+  videoFile,
+  image1File,
+  image2File,
+  width,
+  height,
+  fps,
+}) {
+  const formData = new FormData();
+  formData.append("video", videoFile);
+  formData.append("image_1", image1File);
+  formData.append("image_2", image2File);
+  formData.append("width", String(Number(width) || 576));
+  formData.append("height", String(Number(height) || 1024));
+  formData.append("fps", String(Number(fps) ?? 16));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/wan_vace_person_change_one", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "视频替换失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
+/**
+ * 视频替换（多人）：视频 + 视频替换帧图片 -> 算法 /wan_vace_person_change_mix。
+ */
+export async function generateWanVacePersonChangeMixVideo({
+  videoFile,
+  image1File,
+  width,
+  height,
+  fps,
+}) {
+  const formData = new FormData();
+  formData.append("video", videoFile);
+  formData.append("image_1", image1File);
+  formData.append("width", String(Number(width) || 840));
+  formData.append("height", String(Number(height) || 1024));
+  formData.append("fps", String(Number(fps) ?? 16));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/wan_vace_person_change_mix", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "视频替换失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
+/**
+ * 动作迁移：视频 + 参考图 -> 算法 /wan_vace_pose_change。
+ */
+export async function generateWanVacePoseChangeVideo({
+  videoFile,
+  image1File,
+  width,
+  height,
+  fps,
+}) {
+  const formData = new FormData();
+  formData.append("video", videoFile);
+  formData.append("image_1", image1File);
+  formData.append("width", String(Number(width) || 576));
+  formData.append("height", String(Number(height) || 1024));
+  formData.append("fps", String(Number(fps) ?? 16));
+
+  const token = localStorage.getItem("access_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch("/api/video/wan_vace_pose_change", {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+  if (!response.ok) {
+    const message = typeof data === "object" && data?.detail
+      ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+      : String(data);
+    throw new Error(message || "动作迁移失败");
+  }
+  if (typeof data === "object" && data !== null && "url" in data) {
+    return data;
+  }
+  return { url: data?.url ?? null, success: !!data?.url };
+}
+
 export async function generateFaceSwapLocal({ faceFile, targetFile, model }) {
   const formData = new FormData();
   formData.append("face_image", faceFile);

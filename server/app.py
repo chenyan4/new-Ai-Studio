@@ -30,11 +30,11 @@ def create_app():
     app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
 
     app.include_router(websocket_router)
-    app.include_router(common_router)
     app.include_router(config_router)
     app.include_router(cloud_router)
     app.include_router(generation_router)
     app.include_router(auth_router)
+    app.include_router(common_router)
 
     @app.on_event("startup")
     async def startup_event():

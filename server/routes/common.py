@@ -50,9 +50,9 @@ async def delete_history_api(req: DeleteHistoryRequest, db: Session = Depends(ge
     return delete_history_db(db, current_user.id, str(req.timestamp))
 
 
-@router.get("/{full_path:path}")
+@router.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
 async def catch_all(full_path: str):
-    # Exclude API routes and other mounted directories
+    # Exclude API routes and other mounted directories - return 404 so API routes (registered in other routers) can match
     if (
         full_path.startswith("api/")
         or full_path.startswith("ws/")

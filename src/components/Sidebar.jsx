@@ -2,7 +2,7 @@ const NAV_ITEMS = [
   { id: "zimage", label: "文生图" },
   { id: "enhance", label: "图片&视频预处理" },
   { id: "klein", label: "图片编辑" },
-  { id: "angle", label: "角度控制" },
+  { id: "angle", label: "视频编辑" },
 ];
 
 const Sidebar = ({ activeTab, onTabChange, onTokenClick }) => {

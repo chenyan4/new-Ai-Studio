@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import { getHistory } from "@/api/history";
+import { deleteHistory, getHistory } from "@/api/history";
 import { generateAngleChangeLocal } from "@/api/generation";
 import AngleUploadPanel from "@/components/angle/AngleUploadPanel";
 import AngleControls from "@/components/angle/AngleControls";
-import AngleHistoryGrid from "@/components/angle/AngleHistoryGrid";
-import AngleLightbox from "@/components/angle/AngleLightbox";
+import KleinHistoryGrid from "./KleinHistoryGrid";
+import KleinLightbox from "./KleinLightbox";
 import { Camera, Download } from "lucide-react";
 
 const PAGE_SIZE = 30;
@@ -36,6 +36,7 @@ const KleinAngleView = () => {
   const [historySource, setHistorySource] = useState([]);
   const [historyItems, setHistoryItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(MODEL_VERSION_KEY, modelVersion);
@@ -48,11 +49,35 @@ const KleinAngleView = () => {
   };
 
   const loadHistory = async () => {
-    const data = await getHistory("klein_angle");
-    setHistorySource(data || []);
-    setHistoryItems([]);
-    setCurrentIndex(0);
-    appendPage(data || [], 0);
+    setLoadingHistory(true);
+    try {
+      const data = await getHistory("klein_angle");
+      const list = data || [];
+      setHistorySource(list);
+      setHistoryItems([]);
+      setCurrentIndex(0);
+      appendPage(list, 0);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const loadMore = () => appendPage(historySource, currentIndex);
+
+  const handleDelete = async (timestamp) => {
+    const ok = window.confirm("Delete this archive?");
+    if (!ok) return;
+    const resultDelete = await deleteHistory(timestamp);
+    if (!resultDelete?.success) return;
+    setHistorySource((prev) => prev.filter((item) => item.timestamp !== timestamp));
+    setHistoryItems((prev) => prev.filter((item) => item.timestamp !== timestamp));
+    if (previewItem?.timestamp === timestamp) setPreviewItem(null);
+  };
+
+  const applySameStyle = (item) => {
+    setPrompt(item.prompt || "");
+    setPreviewItem(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const applyAnglePrompt = useCallback((h, v, d) => {
@@ -209,20 +234,20 @@ const KleinAngleView = () => {
         </div>
       </main>
 
-      <section className="a-history-section">
-        <div className="a-history-header">
-          <h2>Archive</h2>
-          <div className="a-history-divider"></div>
-        </div>
-        <AngleHistoryGrid
-          items={historyItems}
-          onOpen={setPreviewItem}
-          onLoadMore={() => appendPage(historySource, currentIndex)}
-          hasMore={hasMore}
-        />
-      </section>
+      <KleinHistoryGrid
+        items={historyItems}
+        onOpen={setPreviewItem}
+        onDelete={handleDelete}
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        loading={loadingHistory}
+      />
 
-      <AngleLightbox item={previewItem} onClose={() => setPreviewItem(null)} />
+      <KleinLightbox
+        item={previewItem}
+        onClose={() => setPreviewItem(null)}
+        onApplySameStyle={applySameStyle}
+      />
     </div>
   );
 };

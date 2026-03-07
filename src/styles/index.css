@@ -358,7 +358,7 @@ body,
   opacity: 0.7;
 }
 
-.z-model-select::after {
+.z-model-select:not(.z-model-select--input)::after {
   content: "▾";
   position: absolute;
   right: 8px;
@@ -367,6 +367,49 @@ body,
   font-size: 10px;
   color: #666;
   pointer-events: none;
+}
+
+.z-prompt-options {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  z-index: 2;
+}
+
+.z-prompt-options .z-model-select {
+  position: static;
+}
+
+.z-option-input {
+  width: 56px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;
+}
+
+.z-inline-inputs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.z-inline-inputs input {
+  width: 48px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;
 }
 
 .z-console-foot {
@@ -591,6 +634,20 @@ body,
   border-radius: 10px;
   padding: 10px 14px;
   cursor: pointer;
+}
+
+.z-lightbox-download {
+  color: #000;
+  text-decoration: none;
+  border: 1px solid #000;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.z-lightbox-download:hover {
+  background: #f5f5f5;
 }
 
 .z-lightbox-close {
@@ -1587,6 +1644,11 @@ body,
   color: #111;
 }
 
+.k-size-input--short {
+  width: 52px;
+  text-align: left;
+}
+
 .k-model-label {
   font-size: 10px;
   font-weight: 700;
@@ -1619,6 +1681,10 @@ body,
   font-size: 10px;
   color: #666;
   pointer-events: none;
+}
+
+.k-model-select--input::after {
+  display: none;
 }
 
 .k-controls-foot {
@@ -1665,6 +1731,107 @@ body,
 
 .k-slots-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* 视频扩图：上传区与画布各占一半宽度 */
+.k-top-expand {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.k-expand-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  min-height: 420px;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.k-expand-upload-half {
+  flex: 0 0 50%;
+  width: 50%;
+  box-sizing: border-box;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.k-expand-upload-half .k-slots-1 {
+  max-width: none;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.k-expand-upload-half .k-slot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.k-expand-row .k-slots-person-one,
+.k-expand-row .k-slots-person-mix,
+.k-expand-row .k-slots-pose-change {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+.k-expand-canvas-half {
+  flex: 0 0 50%;
+  width: 50%;
+  box-sizing: border-box;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.k-expand-canvas-half .k-expand-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+/* 视频扩图：右侧画布面板（与角度控制 a-camera-panel 一致） */
+.k-expand-canvas-half .a-section-title {
+  margin-bottom: 10px;
+}
+.k-expand-panel.a-camera-panel {
+  aspect-ratio: auto;
+  min-height: 280px;
+}
+.k-expand-canvas-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.k-expand-canvas-wrapper .k-expand-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.k-expand-canvas-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #888;
+  font-size: 13px;
+  padding: 24px;
+  text-align: center;
+}
+.k-expand-canvas-hint {
+  font-size: 11px;
+  color: #666;
+}
+.k-expand-sliders-wrap.a-camera-sliders .a-slider-group {
+  gap: 8px;
 }
 
 .k-slot-clickable:hover {
@@ -1981,6 +2148,40 @@ body,
 .k-lightbox-btns a:hover,
 .k-lightbox-btns button:hover {
   background: #222;
+}
+
+.k-lightbox-card--video {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.k-lightbox-card--video .k-lightbox-foot {
+  width: 100%;
+  justify-content: space-between;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.k-lightbox-card--video .k-lightbox-foot p {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  margin-right: 12px;
+}
+
+.k-lightbox-card--video .k-lightbox-btns {
+  flex-shrink: 0;
+}
+
+.k-lightbox-card--video .k-lightbox-video-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.k-lightbox-card--video .k-lightbox-video-wrap video {
+  vertical-align: middle;
 }
 
 .a-page {

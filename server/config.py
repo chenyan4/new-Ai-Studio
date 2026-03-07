@@ -29,6 +29,10 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 os.makedirs(WORKFLOW_DIR, exist_ok=True)
 
+# 视频上传目录（算法侧需能读取此路径，同机部署可设为算法 input_video 目录）
+VIDEO_UPLOAD_DIR = os.environ.get("VIDEO_UPLOAD_DIR", os.path.join(BASE_DIR, "output", "uploaded_video"))
+os.makedirs(VIDEO_UPLOAD_DIR, exist_ok=True)
+
 # 算法侧路由（本地算法服务，如 comfyui/app_router.py）
 ALGO_SIDE_BASE_URL = os.environ.get("ALGO_SIDE_BASE_URL", "http://127.0.0.1:9001")
 

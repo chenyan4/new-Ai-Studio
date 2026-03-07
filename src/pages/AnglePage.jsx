@@ -1,19 +1,45 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { getHistory } from "@/api/history";
-import {
-  generateAngleCloud,
-  generateAngleLocal,
-  pollAngleCloud,
-  uploadImageFile,
-} from "@/api/generation";
-import AngleUploadPanel from "@/components/angle/AngleUploadPanel";
-import AngleControls from "@/components/angle/AngleControls";
-import AngleHistoryGrid from "@/components/angle/AngleHistoryGrid";
-import AngleLightbox from "@/components/angle/AngleLightbox";
-import { Camera, Download } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { deleteHistory, getHistory } from "@/api/history";
+import { generateVeoSeedanceVideo, generateWanVaceT2VVideo } from "@/api/generation";
+import VideoToolbar from "@/components/angle/VideoToolbar";
+import VideoHistoryGrid from "@/components/angle/VideoHistoryGrid";
+import VideoLightbox from "@/components/angle/VideoLightbox";
+import VideoI2VView from "@/components/angle/VideoI2VView";
+import VideoFirstEndView from "@/components/angle/VideoFirstEndView";
+import VideoExpandView from "@/components/angle/VideoExpandView";
+import VideoPersonChangeOneView from "@/components/angle/VideoPersonChangeOneView";
+import VideoPersonChangeMixView from "@/components/angle/VideoPersonChangeMixView";
+import VideoPoseChangeView from "@/components/angle/VideoPoseChangeView";
 
-const PAGE_SIZE = 30;
-const ENGINE_MODE_KEY = "angle_engine_mode";
+const PAGE_SIZE = 15;
+const VIDEO_FEATURE_KEY = "angle_video_feature";
+const VIDEO_ENGINE_KEY = "angle_video_engine";
+const T2V_LOCAL_SIZE_KEY = "angle_t2v_local_size";
+const T2V_LOCAL_FRAMES_KEY = "angle_t2v_local_frames";
+const T2V_LOCAL_FPS_KEY = "angle_t2v_local_fps";
+const T2V_CLOUD_MODEL_KEY = "angle_t2v_cloud_model";
+const T2V_CLOUD_RATIO_KEY = "angle_t2v_cloud_ratio";
+const T2V_CLOUD_RESOLUTION_KEY = "angle_t2v_cloud_resolution";
+const T2V_CLOUD_DURATION_KEY = "angle_t2v_cloud_duration";
+
+const T2V_LOCAL_MODEL = "Wan2.2 Vace";
+const T2V_CLOUD_MODELS = [
+  { label: "veo 3.1 Fast", value: "veo3.1-fast" },
+  { label: "seedance 1.5 pro", value: "doubao-seedance-1-5-pro-251215" },
+];
+const ASPECT_RATIOS = ["16:9", "9:16"];
+const RESOLUTIONS = ["480p", "720p", "1080p"];
+const DURATIONS = [5, 10];
+
+const FEATURES = [
+  "文生视频",
+  "图生视频",
+  "首尾帧 生成",
+  "视频扩图",
+  "视频替换 （单人）",
+  "视频替换 （多人）",
+  "动作迁移",
+];
 
 const makeClientId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -32,42 +58,69 @@ const ensureClientId = () => {
   return created;
 };
 
-const fileToDataUri = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-
 const AnglePage = () => {
-  const [engine, setEngine] = useState(localStorage.getItem(ENGINE_MODE_KEY) || "local");
+  const [feature, setFeature] = useState(
+    () => localStorage.getItem(VIDEO_FEATURE_KEY) || FEATURES[0]
+  );
+  const [engine, setEngine] = useState(
+    () => localStorage.getItem(VIDEO_ENGINE_KEY) || "local"
+  );
   const [prompt, setPrompt] = useState("");
-  const [rotateH, setRotateH] = useState(0);
-  const [rotateV, setRotateV] = useState(0);
-  const [distance, setDistance] = useState(4);
-
-  const [uploadedPath, setUploadedPath] = useState("");
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-
+  // 文生视频 Local
+  const [t2vLocalSize, setT2vLocalSize] = useState(() => localStorage.getItem(T2V_LOCAL_SIZE_KEY) || "1024x576");
+  const [t2vLocalFrames, setT2vLocalFrames] = useState(() => localStorage.getItem(T2V_LOCAL_FRAMES_KEY) || "81");
+  const [t2vLocalFps, setT2vLocalFps] = useState(() => localStorage.getItem(T2V_LOCAL_FPS_KEY) || "24");
+  // 文生视频 Cloud
+  const [t2vCloudModel, setT2vCloudModel] = useState(() => localStorage.getItem(T2V_CLOUD_MODEL_KEY) || T2V_CLOUD_MODELS[0].value);
+  const [t2vCloudRatio, setT2vCloudRatio] = useState(() => localStorage.getItem(T2V_CLOUD_RATIO_KEY) || ASPECT_RATIOS[0]);
+  const [t2vCloudResolution, setT2vCloudResolution] = useState(() => localStorage.getItem(T2V_CLOUD_RESOLUTION_KEY) || RESOLUTIONS[0]);
+  const [t2vCloudDuration, setT2vCloudDuration] = useState(() => {
+    const saved = localStorage.getItem(T2V_CLOUD_DURATION_KEY);
+    if (saved !== null) {
+      const n = parseInt(saved, 10);
+      if (Number.isInteger(n)) return n;
+    }
+    return DURATIONS[0];
+  });
   const [rendering, setRendering] = useState(false);
-  const [currentResult, setCurrentResult] = useState(null);
-  const [previewItem, setPreviewItem] = useState(null);
+  const [queueStatusText, setQueueStatusText] = useState("System Ready");
   const [historySource, setHistorySource] = useState([]);
   const [historyItems, setHistoryItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [progress, setProgress] = useState({
-    visible: false,
-    status: "Pending...",
-    percent: 0,
-  });
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [previewItem, setPreviewItem] = useState(null);
 
   const clientId = useMemo(() => ensureClientId(), []);
 
   useEffect(() => {
-    localStorage.setItem(ENGINE_MODE_KEY, engine);
+    localStorage.setItem(VIDEO_FEATURE_KEY, feature);
+  }, [feature]);
+
+  useEffect(() => {
+    localStorage.setItem(VIDEO_ENGINE_KEY, engine);
   }, [engine]);
+
+  useEffect(() => {
+    if (t2vLocalSize) localStorage.setItem(T2V_LOCAL_SIZE_KEY, t2vLocalSize);
+  }, [t2vLocalSize]);
+  useEffect(() => {
+    if (t2vLocalFrames) localStorage.setItem(T2V_LOCAL_FRAMES_KEY, t2vLocalFrames);
+  }, [t2vLocalFrames]);
+  useEffect(() => {
+    if (t2vLocalFps) localStorage.setItem(T2V_LOCAL_FPS_KEY, t2vLocalFps);
+  }, [t2vLocalFps]);
+  useEffect(() => {
+    if (t2vCloudModel) localStorage.setItem(T2V_CLOUD_MODEL_KEY, t2vCloudModel);
+  }, [t2vCloudModel]);
+  useEffect(() => {
+    if (t2vCloudRatio) localStorage.setItem(T2V_CLOUD_RATIO_KEY, t2vCloudRatio);
+  }, [t2vCloudRatio]);
+  useEffect(() => {
+    if (t2vCloudResolution) localStorage.setItem(T2V_CLOUD_RESOLUTION_KEY, t2vCloudResolution);
+  }, [t2vCloudResolution]);
+  useEffect(() => {
+    if (Number.isInteger(t2vCloudDuration)) localStorage.setItem(T2V_CLOUD_DURATION_KEY, String(t2vCloudDuration));
+  }, [t2vCloudDuration]);
 
   const appendPage = (source, startIndex) => {
     const chunk = source.slice(startIndex, startIndex + PAGE_SIZE);
@@ -76,144 +129,100 @@ const AnglePage = () => {
   };
 
   const loadHistory = async () => {
-    const data = await getHistory("angle");
-    setHistorySource(data || []);
-    setHistoryItems([]);
-    setCurrentIndex(0);
-    appendPage(data || [], 0);
-  };
-
-  // Sync prompt with angle changes
-  const applyAnglePrompt = useCallback((h, v, d) => {
-    const parts = [];
-    if (h !== 0) {
-      parts.push(`${h > 0 ? "向右" : "向左"}旋转${Math.abs(h)}度`);
-    }
-    if (v !== 0) {
-      parts.push(`${v > 0 ? "俯视" : "仰视"}${Math.abs(v)}度`);
-    }
-    let lensText = "";
-    if (d > 4) lensText = "使用广角镜头";
-    if (d < 4) lensText = "使用特写镜头";
-
-    let line = "";
-    if (parts.length > 0) line = `将相机${parts.join("，")}`;
-    if (lensText) line += (line ? "，" : "将相机") + lensText;
-
-    setPrompt((prevPrompt) => {
-      const regex = /将相机.*?(?=(\n|$))/g;
-      if (regex.test(prevPrompt)) {
-        return prevPrompt.replace(regex, line);
-      } else {
-        return prevPrompt.trim() ? (line ? `${prevPrompt.trim()}\n${line}` : prevPrompt) : line;
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    applyAnglePrompt(rotateH, rotateV, distance);
-  }, [rotateH, rotateV, distance, applyAnglePrompt]);
-
-  const handleSelectFile = async (file) => {
-    if (!file) return;
-    setUploadedFile(file);
-    const dataUrl = await fileToDataUri(file);
-    setPreviewUrl(dataUrl);
+    setHistoryLoading(true);
     try {
-      const data = await uploadImageFile(file, file.name || "angle_input.png");
-      const comfyName = data?.files?.[0]?.comfy_name;
-      if (!comfyName) throw new Error("上传成功但未返回路径");
-      setUploadedPath(comfyName);
+      const data = await getHistory("video");
+      setHistorySource(data || []);
+      setHistoryItems([]);
+      setCurrentIndex(0);
+      appendPage(data || [], 0);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    appendPage(historySource, currentIndex);
+  };
+
+  const handleDelete = async (timestamp) => {
+    try {
+      const result = await deleteHistory(String(timestamp));
+      if (!result?.success) {
+        alert(result?.message || "删除失败");
+        return;
+      }
+      await loadHistory();
+      if (previewItem?.timestamp === timestamp) setPreviewItem(null);
     } catch (error) {
-      alert(error.message || "上传失败");
+      alert(error.message || "删除失败");
     }
   };
 
-  const runCloud = async () => {
-    let token = localStorage.getItem("modelscope_api_token");
-    if (!token) {
-      if (typeof window.openTokenModal === "function") {
-        window.openTokenModal();
-      }
-      throw new Error("请先设置个人 ModelScope Token");
-    }
-
-    const imageDataUri = await fileToDataUri(uploadedFile);
-    setProgress({ visible: true, status: "Submitting...", percent: 0 });
-
-    let data = await generateAngleCloud({
-      prompt,
-      apiKey: token,
-      imageDataUri,
-      clientId,
-    });
-
-    while (data?.status === "timeout" && data?.task_id) {
-      const shouldContinue = window.confirm(
-        "Cloud generation is taking longer than expected (300s).\n\nDo you want to continue waiting?"
-      );
-      if (!shouldContinue) {
-        throw new Error("User cancelled waiting.");
-      }
-      setProgress({ visible: true, status: "Resuming...", percent: 0 });
-      data = await pollAngleCloud({
-        taskId: data.task_id,
-        apiKey: token,
-        clientId,
-      });
-    }
-
-    if (!data?.url) {
-      throw new Error("No image URL in cloud response");
-    }
-
-    return {
-      images: [data.url],
-      prompt,
-      timestamp: Date.now(),
-      is_cloud: true,
-    };
+  const handleReplicate = (text) => {
+    setPrompt(text || "");
+    setPreviewItem(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const runLocal = async () => {
-    const data = await generateAngleLocal({
-      uploadedPath,
-      prompt,
-      seed: Math.floor(Math.random() * 1000000000000000),
-      clientId,
-    });
-    if (!data?.images?.length) {
-      throw new Error("No images returned");
-    }
-    return data;
-  };
-
-  const handleGenerate = async () => {
-    if (engine === "local" && !uploadedPath) {
-      alert("Please upload an image first");
-      return;
-    }
-    if (engine === "cloud" && !uploadedFile) {
-      alert("Please upload an image first");
-      return;
-    }
+  const handleRender = async () => {
     if (!prompt.trim()) {
       alert("请输入提示词");
       return;
     }
-
+    if (feature === "文生视频" && engine === "cloud") {
+      const apiKey = localStorage.getItem("modelscope_api_token");
+      if (!apiKey?.trim()) {
+        alert("请先在侧边栏设置 API Token 以使用 Cloud 模式。");
+        return;
+      }
+      setRendering(true);
+      try {
+        await generateVeoSeedanceVideo({
+          prompt,
+          apiKey,
+          modelSelect: t2vCloudModel,
+          aspectRatio: t2vCloudRatio,
+          resolution: t2vCloudResolution,
+          duration: t2vCloudDuration,
+        });
+        await loadHistory();
+      } catch (error) {
+        alert(error?.message || "生成失败");
+      } finally {
+        setRendering(false);
+      }
+      return;
+    }
+    if (feature === "文生视频" && engine === "local") {
+      const [w, h] = (t2vLocalSize || "1024x576").split("x").map((n) => parseInt(String(n).trim(), 10) || 0);
+      const width = w > 0 ? w : 1024;
+      const height = h > 0 ? h : 576;
+      setRendering(true);
+      try {
+        await generateWanVaceT2VVideo({
+          prompt,
+          width,
+          height,
+          numFrames: t2vLocalFrames || 81,
+          fps: t2vLocalFps || 24,
+        });
+        await loadHistory();
+      } catch (error) {
+        alert(error?.message || "生成失败");
+      } finally {
+        setRendering(false);
+      }
+      return;
+    }
     setRendering(true);
-    setCurrentResult(null);
     try {
-      const generated = engine === "cloud" ? await runCloud() : await runLocal();
-      setCurrentResult(generated);
-      setHistorySource((prev) => [generated, ...prev]);
-      setHistoryItems((prev) => [generated, ...prev]);
+      // TODO: 其他 feature 接入对应 API
+      await loadHistory();
     } catch (error) {
-      alert(error.message || "Generation failed");
+      alert(error?.message || "生成失败");
     } finally {
       setRendering(false);
-      setProgress({ visible: false, status: "Pending...", percent: 0 });
     }
   };
 
@@ -221,135 +230,91 @@ const AnglePage = () => {
     loadHistory();
   }, []);
 
-  useEffect(() => {
-    const handler = (event) => {
-      const data = event?.detail;
-      if (!data) return;
-
-      if (data.type === "cloud_status") {
-        const total = Number(data.total || 150);
-        const current = Number(data.progress || 0);
-        const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
-        setProgress({
-          visible: true,
-          status: data.status || "Pending...",
-          percent,
-        });
-      }
-
-      if (data.type === "new_image" && data.data?.type === "angle") {
-        setHistorySource((prev) => {
-          if (prev.find((item) => item.timestamp === data.data.timestamp)) return prev;
-          return [data.data, ...prev];
-        });
-        setHistoryItems((prev) => {
-          if (prev.find((item) => item.timestamp === data.data.timestamp)) return prev;
-          return [data.data, ...prev];
-        });
-      }
-    };
-
-    window.addEventListener("studio_ws_message", handler);
-    return () => window.removeEventListener("studio_ws_message", handler);
-  }, []);
-
   const hasMore = currentIndex < historySource.length;
 
+  const isI2V = feature === "图生视频";
+  const isFirstEnd = feature === "首尾帧 生成";
+  const isVideoExpand = feature === "视频扩图";
+  const isPersonChangeOne = feature === "视频替换 （单人）";
+  const isPersonChangeMix = feature === "视频替换 （多人）";
+  const isPoseChange = feature === "动作迁移";
+
   return (
-    <div className="a-page">
-      <div className="a-header">
-        <div className="a-header-title">
-          <h1>ANGLE CONTROL<span>®</span></h1>
-          <p>Camera & Perspective Control</p>
-        </div>
+    <div className="z-page">
+      <div className="k-header">
+        <select
+          className="k-feature-select"
+          value={feature}
+          onChange={(e) => setFeature(e.target.value)}
+        >
+          {FEATURES.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <main className="a-main-content">
-        {/* Row 1: Upload and Controls */}
-        <div className="a-row">
-          <AngleUploadPanel previewUrl={previewUrl} onSelectFile={handleSelectFile} />
-          <AngleControls
-            engine={engine}
-            onEngineChange={setEngine}
+      {isPersonChangeOne ? (
+        <VideoPersonChangeOneView />
+      ) : isPersonChangeMix ? (
+        <VideoPersonChangeMixView />
+      ) : isPoseChange ? (
+        <VideoPoseChangeView />
+      ) : isVideoExpand ? (
+        <VideoExpandView />
+      ) : isFirstEnd ? (
+        <VideoFirstEndView />
+      ) : isI2V ? (
+        <VideoI2VView />
+      ) : (
+        <>
+          <VideoToolbar
+            feature={feature}
             prompt={prompt}
             onPromptChange={setPrompt}
-            rotateH={rotateH}
-            rotateV={rotateV}
-            distance={distance}
-            onRotateHChange={setRotateH}
-            onRotateVChange={setRotateV}
-            onDistanceChange={setDistance}
-            onGenerate={handleGenerate}
-            rendering={rendering}
-            progress={progress}
-            previewUrl={previewUrl}
+            engine={engine}
+            onEngineChange={setEngine}
+            loading={rendering}
+            onRender={handleRender}
+            queueStatusText={queueStatusText}
+            t2vLocalModel={T2V_LOCAL_MODEL}
+            t2vLocalSize={t2vLocalSize}
+            onT2vLocalSizeChange={setT2vLocalSize}
+            t2vLocalFrames={t2vLocalFrames}
+            onT2vLocalFramesChange={setT2vLocalFrames}
+            t2vLocalFps={t2vLocalFps}
+            onT2vLocalFpsChange={setT2vLocalFps}
+            t2vCloudModel={t2vCloudModel}
+            onT2vCloudModelChange={setT2vCloudModel}
+            t2vCloudRatio={t2vCloudRatio}
+            onT2vCloudRatioChange={setT2vCloudRatio}
+            t2vCloudResolution={t2vCloudResolution}
+            onT2vCloudResolutionChange={setT2vCloudResolution}
+            t2vCloudDuration={t2vCloudDuration}
+            onT2vCloudDurationChange={setT2vCloudDuration}
+            t2vCloudModelOptions={T2V_CLOUD_MODELS}
+            aspectRatioOptions={ASPECT_RATIOS}
+            resolutionOptions={RESOLUTIONS}
+            durationOptions={DURATIONS}
           />
-        </div>
 
-        {/* Row 2: Result */}
-        <div className="a-result-section">
-          <h3 className="a-section-title">04. Result Preview</h3>
-          <div className="a-result-frame">
-            {!rendering && !currentResult?.images?.[0] && (
-              <div className="a-empty-state">
-                <Camera size={48} strokeWidth={1} />
-                <p>Canvas Ready</p>
-              </div>
-            )}
+          <VideoHistoryGrid
+            items={historyItems}
+            onOpenItem={setPreviewItem}
+            onDeleteItem={handleDelete}
+            onLoadMore={loadMore}
+            hasMore={hasMore}
+            loading={historyLoading}
+          />
 
-            {rendering && (
-              <div className="a-loading-state">
-                <div className="a-loading-box"></div>
-                <p>Processing...</p>
-                {progress.visible && (
-                  <div className="a-progress-container">
-                    <div className="a-progress-info">
-                      <span>{progress.status}</span>
-                      <span>{progress.percent}%</span>
-                    </div>
-                    <div className="a-progress-track">
-                      <div className="a-progress-bar" style={{ width: `${progress.percent}%` }}></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!rendering && currentResult?.images?.[0] && (
-              <>
-                <img
-                  src={currentResult.images[0]}
-                  alt="angle-result"
-                  className="a-result-img"
-                  onClick={() => setPreviewItem(currentResult)}
-                />
-                <a
-                  href={currentResult.images[0]}
-                  download={`Angle-${Date.now()}.png`}
-                  className="a-download-btn"
-                >
-                  <Download size={20} />
-                </a>
-              </>
-            )}
-          </div>
-        </div>
-      </main>
-
-      <section className="a-history-section">
-        <div className="a-history-header">
-          <h2>Archive</h2>
-          <div className="a-history-divider"></div>
-        </div>
-        <AngleHistoryGrid
-          items={historyItems}
-          onOpen={setPreviewItem}
-          onLoadMore={() => appendPage(historySource, currentIndex)}
-          hasMore={hasMore}
-        />
-      </section>
-
-      <AngleLightbox item={previewItem} onClose={() => setPreviewItem(null)} />
+          <VideoLightbox
+            item={previewItem}
+            onClose={() => setPreviewItem(null)}
+            onReplicate={handleReplicate}
+          />
+        </>
+      )}
     </div>
   );
 };
