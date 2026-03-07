@@ -98,11 +98,11 @@ const VideoPersonChangeOneView = () => {
       return;
     }
     if (!image1File) {
-      alert("请上传视频任意帧图片");
+      alert("请上传参考图");
       return;
     }
     if (!image2File) {
-      alert("请上传参考图");
+      alert("请上传视频任意帧图片");
       return;
     }
     const parts = (size || "576x1024").split("x").map((n) => parseInt(String(n).trim(), 10) || 0);
@@ -181,10 +181,10 @@ const VideoPersonChangeOneView = () => {
             </label>
             <label className="k-slot">
               {image1Preview ? (
-                <img src={image1Preview} alt="视频任意帧" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                <img src={image1Preview} alt="参考图" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
               ) : (
                 <div className="k-slot-empty">
-                  <strong>视频任意帧</strong>
+                  <strong>参考图</strong>
                   <span>点击上传图片</span>
                 </div>
               )}
@@ -197,10 +197,10 @@ const VideoPersonChangeOneView = () => {
             </label>
             <label className="k-slot">
               {image2Preview ? (
-                <img src={image2Preview} alt="参考图" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                <img src={image2Preview} alt="视频任意帧" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
               ) : (
                 <div className="k-slot-empty">
-                  <strong>参考图</strong>
+                  <strong>视频任意帧</strong>
                   <span>点击上传图片</span>
                 </div>
               )}
