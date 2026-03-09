@@ -8,6 +8,7 @@ import KleinLightbox from "./KleinLightbox";
 const PAGE_SIZE = 24;
 const MODEL_VERSION_KEY = "klein_ecom_model";
 const SIZE_MODE_KEY = "klein_ecom_size_mode";
+const normalizeGeminiModel = (v) => (v && v.startsWith("ggemini") ? "gemini" + v.slice(7) : v);
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -27,7 +28,7 @@ const KleinEcomView = () => {
 
   const [prompt, setPrompt] = useState("");
   const [modelVersion, setModelVersion] = useState(
-    localStorage.getItem(MODEL_VERSION_KEY) || "gemini-3.1-flash-image-preview"
+    normalizeGeminiModel(localStorage.getItem(MODEL_VERSION_KEY)) || "gemini-3.1-flash-image-preview"
   );
   const [sizeMode, setSizeMode] = useState(
     localStorage.getItem(SIZE_MODE_KEY) || "Match Image_1 (Smart Crop)"

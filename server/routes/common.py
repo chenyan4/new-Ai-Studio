@@ -32,8 +32,16 @@ async def upload_image(files: list[UploadFile] = File(...)):
 
 
 @router.get("/api/history")
-async def get_history_api(type: str = None, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return get_history_db(db, current_user.id, type_filter=type)
+async def get_history_api(
+    type: str = None,
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return get_history_db(
+        db, current_user.id, type_filter=type, limit=min(limit, 500), offset=max(0, offset)
+    )
 
 
 @router.get("/api/queue_status")

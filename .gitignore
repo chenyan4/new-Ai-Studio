@@ -19,6 +19,21 @@ history.json
 output/
 global_config.json
 
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Database (local data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+error.log
+logs/
+
 # Editor/OS
 .DS_Store
 .idea/

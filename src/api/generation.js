@@ -107,6 +107,8 @@ export function generateKleinCloud({
   scene,
   language,
 }) {
+  const norm = (m) => (m && m.startsWith("ggemini") ? "gemini" + m.slice(7) : m);
+  const modelSelect = norm(model || "gemini-3.1-flash-image-preview");
   return request("/api/klein/generate", {
     method: "POST",
     body: JSON.stringify({
@@ -115,7 +117,7 @@ export function generateKleinCloud({
       image_2: image2 || null,
       image_3: image3 || null,
       api_key: apiKey,
-      model_select: model || "gemini-3.1-flash-image-preview",
+      model_select: modelSelect,
       size_mode: sizeMode || "Match Image_1 (Smart Crop)",
       custom_w: width || 1024,
       custom_h: height || 1024,

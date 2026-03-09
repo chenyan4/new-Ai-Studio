@@ -38,11 +38,15 @@ const SIZE_MODE_KEY = "klein_size_mode";
 
 const FEATURES = ["万能改图", "AI 换脸", "AI 换背景", "AI 消除人物","AI 人物迁移","AI 光影重组","AI 电商图", "角度控制"];
 
+const GEMINI_DEFAULT = "gemini-3.1-flash-image-preview";
+const normalizeGeminiModel = (v) =>
+  v && v.startsWith("ggemini") ? "gemini" + v.slice(7) : v;
+
 const KleinPage = () => {
   const [slots, setSlots] = useState(emptySlots);
   const [prompt, setPrompt] = useState("");
   const [modelVersion, setModelVersion] = useState(
-    localStorage.getItem(MODEL_VERSION_KEY) || "ggemini-3.1-flash-image-preview"
+    normalizeGeminiModel(localStorage.getItem(MODEL_VERSION_KEY)) || GEMINI_DEFAULT
   );
   const [sizeMode, setSizeMode] = useState(
     localStorage.getItem(SIZE_MODE_KEY) || "Match Image_1 (Smart Crop)"

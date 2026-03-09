@@ -1,5 +1,7 @@
 import asyncio
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -17,8 +19,20 @@ from server.core.database import engine, Base
 # 初始化数据库
 Base.metadata.create_all(bind=engine)
 
+
+class OutputCacheMiddleware(BaseHTTPMiddleware):
+    """为 /output 下的静态资源加缓存头，加速历史图片/视频二次加载"""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/output/") and response.status_code == 200:
+            response.headers.setdefault("Cache-Control", "public, max-age=86400")  # 1 天
+        return response
+
+
 def create_app():
     app = FastAPI()
+    app.add_middleware(OutputCacheMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],

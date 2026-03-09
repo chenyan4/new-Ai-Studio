@@ -39,7 +39,13 @@ def save_generation(db: Session, user_id: str, record: dict) -> dict:
     return out
 
 
-def get_history(db: Session, user_id: str, type_filter: Optional[str] = None) -> List[dict]:
+def get_history(
+    db: Session,
+    user_id: str,
+    type_filter: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> List[dict]:
     q = db.query(GenerationHistory).filter(GenerationHistory.user_id == str(user_id))
 
     if type_filter:
@@ -49,7 +55,7 @@ def get_history(db: Session, user_id: str, type_filter: Optional[str] = None) ->
             target_types.append("cloud")
         q = q.filter(GenerationHistory.type.in_(target_types))
 
-    rows = q.order_by(GenerationHistory.created_at.desc()).all()
+    rows = q.order_by(GenerationHistory.created_at.desc()).offset(offset).limit(limit).all()
     result = []
     for r in rows:
         images = r.images

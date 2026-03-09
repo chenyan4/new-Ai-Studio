@@ -1,5 +1,17 @@
 [
     {
+        "prompt": "一只羊",
+        "images": [
+            "/output/zimage_8a67471b28.png"
+        ],
+        "timestamp": 1773025573.3233697,
+        "type": "zimage",
+        "params": {
+            "width": 1024,
+            "height": 1024
+        }
+    },
+    {
         "timestamp": 1772708491.9124284,
         "prompt": "埃及",
         "images": [

@@ -43,9 +43,14 @@ trap cleanup SIGINT SIGTERM
 # ========== 启动后端 ==========
 echo -e "${YELLOW}[1/2] 启动后端服务...${NC}"
 
-# 使用 conda 环境运行 uvicorn
-# 直接通过 uvicorn 命令启动 FastAPI 应用，不再需要外层的 app.py
-conda run -n Cheny uvicorn server.app:app --host 0.0.0.0 --port 7860 &
+# 优先使用 venv，否则使用 conda 环境运行 uvicorn
+if [ -f "venv/bin/activate" ]; then
+  . venv/bin/activate && uvicorn server.app:app --host 0.0.0.0 --port 7860 &
+elif command -v conda &>/dev/null; then
+  conda run -n Cheny uvicorn server.app:app --host 0.0.0.0 --port 7860 &
+else
+  uvicorn server.app:app --host 0.0.0.0 --port 7860 &
+fi
 BACKEND_PID=$!
 echo -e "${GREEN}✓ 后端已启动 (PID: $BACKEND_PID) - http://localhost:7860${NC}"
 

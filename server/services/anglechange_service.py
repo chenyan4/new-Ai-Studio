@@ -5,7 +5,8 @@ import uuid
 
 import httpx
 
-ALGO_SIDE_BASE_URL = os.getenv("ALGO_SIDE_BASE_URL", "http://127.0.0.1:9001")
+from server.config import ALGO_SIDE_BASE_URL
+
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "../../output")
 
 MODEL_ENDPOINT_MAP = {
