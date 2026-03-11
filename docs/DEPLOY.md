@@ -79,9 +79,47 @@ export $(grep -v '^#' .env | xargs)
 
 ## 三、前端环境配置
 
+### 3.0 安装 Node.js 和 npm（若无系统包时）
+
+需满足 **Node.js 20.19+ 或 22.12+**（Vite 要求）。
+
+**方式一：系统包（有 root 时推荐）**
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y nodejs npm
+# 若版本过低，可用 NodeSource 安装 Node 22：
+# curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+# sudo apt install -y nodejs
+```
+
+**方式二：本机预编译包（无需 root，当前环境已用此方式）**
+
+若无法使用 `apt`，可将 Node.js 解压到 `/data` 后使用：
+
+```bash
+cd /data
+curl -fsSL https://nodejs.org/dist/v22.22.0/node-v22.22.0-linux-x64.tar.xz -o node.tar.xz
+tar -xJf node.tar.xz  # 解压时若有 ownership 警告可忽略
+rm node.tar.xz
+export PATH="/data/node-v22.22.0-linux-x64/bin:$PATH"
+node -v   # 应显示 v22.22.0
+npm -v
+```
+
+在项目目录下使用 Node/npm 前先执行一次：
+
+```bash
+source ./use-node.sh
+```
+
+或把 `export PATH="/data/node-v22.22.0-linux-x64/bin:$PATH"` 加入 `~/.bashrc`。
+
 ### 3.1 安装 Node 依赖并构建
 
 ```bash
+# 若使用本机安装的 Node，先： source ./use-node.sh 或 export PATH="/data/node-v22.22.0-linux-x64/bin:$PATH"
 npm install
 npm run build
 ```

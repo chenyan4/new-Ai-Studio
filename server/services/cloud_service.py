@@ -217,10 +217,12 @@ async def wan_vace_h_first_end_api(req: WanVaceFirstEndRequest):
 
 
 async def video_expand_api(req: VideoExpandRequest):
-    """视频扩图：算法侧需要可读的 video_url（本地文件路径）。"""
+    """视频扩图：优先通过 base64 将视频传给算法侧，兼容本地路径。"""
 
     payload = {
+        # 算法侧优先从 base64 还原本地文件；同机部署时也可直接使用 video_url
         "video_url": req.video_url,
+        "video_b64": req.video_b64,
         "expand_left": int(req.expand_left),
         "expand_top": int(req.expand_top),
         "expand_right": int(req.expand_right),
@@ -256,12 +258,13 @@ async def video_expand_api(req: VideoExpandRequest):
 
 
 async def wan_vace_person_change_one_api(req: PersonChangeOneRequest):
-    """视频替换（单人）：image_1 视频任意帧，image_2 参考图，video_url 本地路径。"""
+    """视频替换（单人）：image_1 视频任意帧，image_2 参考图，视频通过 base64 传给算法侧。"""
 
     payload = {
         "image_1": req.image_1,
         "image_2": req.image_2,
         "video_url": req.video_url,
+        "video_b64": req.video_b64,
         "width": int(req.width),
         "height": int(req.height),
         "fps": int(req.fps),
@@ -293,11 +296,12 @@ async def wan_vace_person_change_one_api(req: PersonChangeOneRequest):
 
 
 async def wan_vace_person_change_mix_api(req: PersonChangeMixRequest):
-    """视频替换（多人）：image_1 视频替换帧，video_url 本地路径。"""
+    """视频替换（多人）：image_1 视频替换帧，视频通过 base64 传给算法侧。"""
 
     payload = {
         "image_1": req.image_1,
         "video_url": req.video_url,
+        "video_b64": req.video_b64,
         "width": int(req.width),
         "height": int(req.height),
         "fps": int(req.fps),
@@ -329,11 +333,12 @@ async def wan_vace_person_change_mix_api(req: PersonChangeMixRequest):
 
 
 async def wan_vace_pose_change_api(req: PoseChangeRequest):
-    """动作迁移：image_1 参考图，video_url 本地路径。"""
+    """动作迁移：image_1 参考图，视频通过 base64 传给算法侧。"""
 
     payload = {
         "image_1": req.image_1,
         "video_url": req.video_url,
+        "video_b64": req.video_b64,
         "width": int(req.width),
         "height": int(req.height),
         "fps": int(req.fps),
@@ -597,7 +602,8 @@ async def generate_klein_cloud(req: KleinCloudRequest):
             }
             endpoint = "/everything_image"
 
-        async with httpx.AsyncClient(timeout=180) as client:
+        # Klein 电商/万能改图请求可能耗时较长，这里适当放宽超时时间
+        async with httpx.AsyncClient(timeout=600) as client:
             submit_res = await client.post(
                 f"{ALGO_SIDE_BASE_URL}{endpoint}",
                 json=payload,

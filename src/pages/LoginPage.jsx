@@ -213,7 +213,8 @@ const LoginPage = () => {
         if (data.access_token) {
           localStorage.setItem("is_logged_in", "true");
           localStorage.setItem("access_token", data.access_token);
-          navigate("/");
+          // 登录成功后统一跳转到受保护的主应用路由
+          navigate("/app");
         } else {
           alert("登录失败，请检查账号密码");
         }

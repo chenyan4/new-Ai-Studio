@@ -93,7 +93,9 @@ class WanVaceFirstEndRequest(BaseModel):
 
 
 class VideoExpandRequest(BaseModel):
-    video_url: str  # 本地视频文件绝对路径，算法侧可读
+    # 兼容两种方式：本地路径或 base64 视频
+    video_url: Optional[str] = None  # 本地视频文件绝对路径（同机部署时可用）
+    video_b64: Optional[str] = None  # 远程算法侧推荐使用的 base64 视频
     expand_left: int = 160
     expand_top: int = 0
     expand_right: int = 160
@@ -106,7 +108,9 @@ class VideoExpandRequest(BaseModel):
 class PersonChangeOneRequest(BaseModel):
     image_1: str  # base64 视频任意帧
     image_2: str  # base64 参考图
-    video_url: str  # 本地视频路径，算法侧可读
+    # 兼容两种方式：本地路径或 base64 视频
+    video_url: Optional[str] = None  # 本地视频路径（同机部署时可用）
+    video_b64: Optional[str] = None  # 远程算法侧推荐使用的 base64 视频
     width: int = 576
     height: int = 1024
     fps: int = 16
@@ -114,7 +118,9 @@ class PersonChangeOneRequest(BaseModel):
 
 class PersonChangeMixRequest(BaseModel):
     image_1: str  # base64 视频替换帧
-    video_url: str  # 本地视频路径，算法侧可读
+    # 兼容两种方式：本地路径或 base64 视频
+    video_url: Optional[str] = None  # 本地视频路径（同机部署时可用）
+    video_b64: Optional[str] = None  # 远程算法侧推荐使用的 base64 视频
     width: int = 840
     height: int = 1024
     fps: int = 16
@@ -122,7 +128,9 @@ class PersonChangeMixRequest(BaseModel):
 
 class PoseChangeRequest(BaseModel):
     image_1: str  # base64 参考图
-    video_url: str  # 本地视频路径，算法侧可读
+    # 兼容两种方式：本地路径或 base64 视频
+    video_url: Optional[str] = None  # 本地视频路径（同机部署时可用）
+    video_b64: Optional[str] = None  # 远程算法侧推荐使用的 base64 视频
     width: int = 576
     height: int = 1024
     fps: int = 16

@@ -25,17 +25,23 @@ const PrivateRoute = ({ children }) => {
 function App() {
   return (
     <Routes>
+      {/* 先进入登录 / 注册 */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route 
-        path="/" 
+
+      {/* 登录后的主应用放在 /app 下，由 PrivateRoute 保护 */}
+      <Route
+        path="/app"
         element={
           <PrivateRoute>
             <StudioShellPage />
           </PrivateRoute>
-        } 
+        }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* 默认和其他路径一律跳到登录页，避免未登录直接进主页面触发 401 */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

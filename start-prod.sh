@@ -7,6 +7,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# 使用 /data 下安装的 Node.js（若存在），满足 DEPLOY.md 对 Node 20.19+ / 22.12+ 要求
+if [ -d "/data/node-v22.22.0-linux-x64/bin" ]; then
+  export PATH="/data/node-v22.22.0-linux-x64/bin:$PATH"
+fi
+
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
@@ -29,9 +34,9 @@ if [ ! -f "static/react/index.html" ]; then
 fi
 
 # 启动后端（同时托管前端静态资源，访问 http://IP:7860 即可看到完整页面）
-echo -e "${YELLOW}启动后端 (http://0.0.0.0:7860) ...${NC}"
+echo -e "${YELLOW}启动后端 (http://0.0.0.0:80) ...${NC}"
 if [ -f "venv/bin/activate" ]; then
   . venv/bin/activate
 fi
 
-exec uvicorn server.app:app --host 0.0.0.0 --port 7860
+exec uvicorn server.app:app --host 0.0.0.0 --port 80

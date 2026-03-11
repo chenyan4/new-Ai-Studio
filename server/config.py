@@ -2,7 +2,8 @@ import os
 
 
 DEFAULT_COMFYUI_INSTANCES = [
-    "10.60.217.230:9001",
+    "117.50.218.165:9001",
+    "117.50.241.85:9001"
 ]
 
 
@@ -34,7 +35,7 @@ VIDEO_UPLOAD_DIR = os.environ.get("VIDEO_UPLOAD_DIR", os.path.join(BASE_DIR, "ou
 os.makedirs(VIDEO_UPLOAD_DIR, exist_ok=True)
 
 # 算法侧路由（本地算法服务，如 comfyui/app_router.py）
-ALGO_SIDE_BASE_URL="http://117.50.218.165:9001"
+ALGO_SIDE_BASE_URL="http://117.50.241.85:9001"
 
 # 数据库配置
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'server', 'database.db')}")

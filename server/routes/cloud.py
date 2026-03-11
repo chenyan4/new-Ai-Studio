@@ -336,17 +336,11 @@ async def video_expand_video_api(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    # 将上传视频转为 base64，便于算法侧在远端环境还原本地文件
     raw = await video.read()
-    ext = "mp4"
-    if video.filename and "." in video.filename:
-        ext = video.filename.rsplit(".", 1)[-1].lower() or "mp4"
-    name = f"expand_{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    save_path = os.path.join(VIDEO_UPLOAD_DIR, name)
-    with open(save_path, "wb") as f:
-        f.write(raw)
-    video_url = os.path.abspath(save_path)
+    video_b64 = base64.b64encode(raw).decode("utf-8")
     req = VideoExpandRequest(
-        video_url=video_url,
+        video_b64=video_b64,
         expand_left=int(expand_left),
         expand_top=int(expand_top),
         expand_right=int(expand_right),
@@ -393,23 +387,17 @@ async def wan_vace_person_change_one_video_api(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    # 所有输入统一转为 base64，算法侧会在本地恢复为文件
     raw_video = await video.read()
     raw1 = await image_1.read()
     raw2 = await image_2.read()
-    ext = "mp4"
-    if video.filename and "." in video.filename:
-        ext = video.filename.rsplit(".", 1)[-1].lower() or "mp4"
-    name = f"person_one_{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    save_path = os.path.join(VIDEO_UPLOAD_DIR, name)
-    with open(save_path, "wb") as f:
-        f.write(raw_video)
-    video_url = os.path.abspath(save_path)
+    video_b64 = base64.b64encode(raw_video).decode("utf-8")
     b64_1 = base64.b64encode(raw1).decode("utf-8")
     b64_2 = base64.b64encode(raw2).decode("utf-8")
     req = PersonChangeOneRequest(
         image_1=b64_1,
         image_2=b64_2,
-        video_url=video_url,
+        video_b64=video_b64,
         width=int(width),
         height=int(height),
         fps=int(fps),
@@ -449,18 +437,11 @@ async def wan_vace_person_change_mix_video_api(
 ):
     raw_video = await video.read()
     raw1 = await image_1.read()
-    ext = "mp4"
-    if video.filename and "." in video.filename:
-        ext = video.filename.rsplit(".", 1)[-1].lower() or "mp4"
-    name = f"person_mix_{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    save_path = os.path.join(VIDEO_UPLOAD_DIR, name)
-    with open(save_path, "wb") as f:
-        f.write(raw_video)
-    video_url = os.path.abspath(save_path)
+    video_b64 = base64.b64encode(raw_video).decode("utf-8")
     b64_1 = base64.b64encode(raw1).decode("utf-8")
     req = PersonChangeMixRequest(
         image_1=b64_1,
-        video_url=video_url,
+        video_b64=video_b64,
         width=int(width),
         height=int(height),
         fps=int(fps),
@@ -500,18 +481,11 @@ async def wan_vace_pose_change_video_api(
 ):
     raw_video = await video.read()
     raw1 = await image_1.read()
-    ext = "mp4"
-    if video.filename and "." in video.filename:
-        ext = video.filename.rsplit(".", 1)[-1].lower() or "mp4"
-    name = f"pose_change_{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
-    save_path = os.path.join(VIDEO_UPLOAD_DIR, name)
-    with open(save_path, "wb") as f:
-        f.write(raw_video)
-    video_url = os.path.abspath(save_path)
+    video_b64 = base64.b64encode(raw_video).decode("utf-8")
     b64_1 = base64.b64encode(raw1).decode("utf-8")
     req = PoseChangeRequest(
         image_1=b64_1,
-        video_url=video_url,
+        video_b64=video_b64,
         width=int(width),
         height=int(height),
         fps=int(fps),

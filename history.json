@@ -1,5 +1,37 @@
 [
     {
+        "prompt": "沙滩海滨",
+        "images": [
+            "/output/zimage_56c144dcfd.png"
+        ],
+        "timestamp": 1773057551.0768821,
+        "type": "zimage",
+        "params": {
+            "width": 1024,
+            "height": 1024
+        }
+    },
+    {
+        "timestamp": 1773040120.03995,
+        "prompt": "黑森林",
+        "images": [
+            "/output/cloud_1773040120_779650f658.png"
+        ],
+        "type": "cloud"
+    },
+    {
+        "prompt": "一条龙",
+        "images": [
+            "/output/zimage_7fad1de4e0.png"
+        ],
+        "timestamp": 1773040007.2681475,
+        "type": "zimage",
+        "params": {
+            "width": 1024,
+            "height": 1024
+        }
+    },
+    {
         "prompt": "一只羊",
         "images": [
             "/output/zimage_8a67471b28.png"
